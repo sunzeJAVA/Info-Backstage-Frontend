@@ -5,7 +5,7 @@
         ELADMIN 后台管理系统
       </h3>
       <el-form-item prop="username">
-        <el-input v-model="loginForm.username" type="text" auto-complete="off" placeholder="账号">
+        <el-input v-model="loginForm.account" type="text" auto-complete="off" placeholder="账号">
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
         </el-input>
       </el-form-item>
@@ -13,14 +13,6 @@
         <el-input v-model="loginForm.password" type="password" auto-complete="off" placeholder="密码" @keyup.enter.native="handleLogin">
           <svg-icon slot="prefix" icon-class="password" class="el-input__icon input-icon" />
         </el-input>
-      </el-form-item>
-      <el-form-item prop="code">
-        <el-input v-model="loginForm.code" auto-complete="off" placeholder="验证码" style="width: 63%" @keyup.enter.native="handleLogin">
-          <svg-icon slot="prefix" icon-class="validCode" class="el-input__icon input-icon" />
-        </el-input>
-        <div class="login-code">
-          <img :src="codeUrl" @click="getCode">
-        </div>
       </el-form-item>
       <el-checkbox v-model="loginForm.rememberMe" style="margin:0 0 25px 0;">
         记住我
@@ -44,7 +36,6 @@
 <script>
 import { encrypt } from '@/utils/rsaEncrypt'
 import Config from '@/settings'
-import { getCodeImg } from '@/api/login'
 import Cookies from 'js-cookie'
 import qs from 'qs'
 import Background from '@/assets/images/background.jpeg'
@@ -56,16 +47,14 @@ export default {
       codeUrl: '',
       cookiePass: '',
       loginForm: {
-        username: 'admin',
-        password: '123456',
+        account: 'jichu.yang',
+        password: '112233',
         rememberMe: false,
-        code: '',
         uuid: ''
       },
       loginRules: {
-        username: [{ required: true, trigger: 'blur', message: '用户名不能为空' }],
-        password: [{ required: true, trigger: 'blur', message: '密码不能为空' }],
-        code: [{ required: true, trigger: 'change', message: '验证码不能为空' }]
+        account: [{ required: true, trigger: 'blur', message: '用户名不能为空' }],
+        password: [{ required: true, trigger: 'blur', message: '密码不能为空' }]
       },
       loading: false,
       redirect: undefined
@@ -87,54 +76,41 @@ export default {
     }
   },
   created() {
-    // 获取验证码
-    this.getCode()
     // 获取用户名密码等Cookie
     this.getCookie()
     // token 过期提示
     this.point()
   },
   methods: {
-    getCode() {
-      getCodeImg().then(res => {
-        this.codeUrl = res.img
-        this.loginForm.uuid = res.uuid
-      })
-    },
     getCookie() {
-      const username = Cookies.get('username')
+      const account = Cookies.get('account')
       let password = Cookies.get('password')
       const rememberMe = Cookies.get('rememberMe')
       // 保存cookie里面的加密后的密码
       this.cookiePass = password === undefined ? '' : password
       password = password === undefined ? this.loginForm.password : password
       this.loginForm = {
-        username: username === undefined ? this.loginForm.username : username,
+        account: account === undefined ? this.loginForm.account : account,
         password: password,
-        rememberMe: rememberMe === undefined ? false : Boolean(rememberMe),
-        code: ''
+        rememberMe: rememberMe === undefined ? false : Boolean(rememberMe)
       }
     },
     handleLogin() {
       this.$refs.loginForm.validate(valid => {
         const user = {
-          username: this.loginForm.username,
+          account: this.loginForm.account,
           password: this.loginForm.password,
           rememberMe: this.loginForm.rememberMe,
-          code: this.loginForm.code,
           uuid: this.loginForm.uuid
-        }
-        if (user.password !== this.cookiePass) {
-          user.password = encrypt(user.password)
         }
         if (valid) {
           this.loading = true
           if (user.rememberMe) {
-            Cookies.set('username', user.username, { expires: Config.passCookieExpires })
+            Cookies.set('account', user.account, { expires: Config.passCookieExpires })
             Cookies.set('password', user.password, { expires: Config.passCookieExpires })
             Cookies.set('rememberMe', user.rememberMe, { expires: Config.passCookieExpires })
           } else {
-            Cookies.remove('username')
+            Cookies.remove('account')
             Cookies.remove('password')
             Cookies.remove('rememberMe')
           }
@@ -143,7 +119,6 @@ export default {
             this.$router.push({ path: this.redirect || '/' })
           }).catch(() => {
             this.loading = false
-            this.getCode()
           })
         } else {
           console.log('error submit!!')

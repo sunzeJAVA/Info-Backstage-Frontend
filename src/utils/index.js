@@ -1,3 +1,5 @@
+import moment from "moment"
+
 /**
  * Created by PanJiaChen on 16/11/18.
  */
@@ -385,4 +387,15 @@ export function downloadFile(obj, name, suffix) {
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+}
+
+export const toHumanDate = (timestamp, defText = "", short = true) => {
+  if (!timestamp || timestamp === 0) {
+    return defText
+  }
+  if (!short) {
+    return moment.unix(timestamp / 1000).format("YYYY-MM-DD HH:mm:ss")
+  } else {
+    return moment.unix(timestamp / 1000).format("YY-MM-DD HH:mm")
+  }
 }

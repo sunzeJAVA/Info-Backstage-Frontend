@@ -8,7 +8,7 @@ import Cookies from 'js-cookie'
 
 // 创建axios实例
 const service = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' ? process.env.VUE_APP_BASE_API : '/', // api 的 base_url
+  baseURL: process.env.NODE_ENV === 'production' ? process.env.VUE_APP_BASE_API : '/backstage', // api 的 base_url
   timeout: Config.timeout // 请求超时时间
 })
 
@@ -16,7 +16,7 @@ const service = axios.create({
 service.interceptors.request.use(
   config => {
     if (getToken()) {
-      config.headers['Authorization'] = getToken() // 让每个请求携带自定义token 请根据实际情况自行修改
+      config.headers['X-Auth'] = getToken() // 让每个请求携带自定义token 请根据实际情况自行修改
     }
     config.headers['Content-Type'] = 'application/json'
     return config
@@ -29,7 +29,19 @@ service.interceptors.request.use(
 // response 拦截器
 service.interceptors.response.use(
   response => {
-    return response.data
+    const json = response.data
+    if (json.code === 255) {
+      location.href = "/login"
+      throw new Error("用户会话已经过期，重新跳转登录")
+    } else if (json.msg !== "ok" || json.code !== 0) {
+      Notification.error({
+        title: json.msg,
+        duration: 5000
+      })
+      return Promise.reject()
+    } else {
+      return json.data
+    }
   },
   error => {
     // 兼容blob下载出错json提示
@@ -47,6 +59,7 @@ service.interceptors.response.use(
       let code = 0
       try {
         code = error.response.data.status
+        console.log(code)
       } catch (e) {
         if (error.toString().indexOf('Error: timeout') !== -1) {
           Notification.error({

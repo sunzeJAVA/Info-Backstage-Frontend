@@ -27,19 +27,10 @@ module.exports = {
       errors: true
     },
     proxy: {
-      '/api': {
+      '/backstage': {
         target: process.env.VUE_APP_BASE_API,
+        ws: true,
         changeOrigin: true,
-        pathRewrite: {
-          '^/api': 'api'
-        }
-      },
-      '/auth': {
-        target: process.env.VUE_APP_BASE_API,
-        changeOrigin: true,
-        pathRewrite: {
-          '^/auth': 'auth'
-        }
       }
     }
   },

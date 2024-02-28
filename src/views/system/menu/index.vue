@@ -2,12 +2,6 @@
   <div class="app-container">
     <!--工具栏-->
     <div class="head-container">
-      <div v-if="crud.props.searchToggle">
-        <!-- 搜索 -->
-        <el-input v-model="query.blurry" clearable size="small" placeholder="模糊搜索" style="width: 200px;" class="filter-item" @keyup.enter.native="crud.toQuery" />
-        <date-range-picker v-model="query.createTime" class="date-item" />
-        <rrOperation />
-      </div>
       <crudOperation :permission="permission" />
     </div>
     <!--表单渲染-->
@@ -34,8 +28,8 @@
             </el-input>
           </el-popover>
         </el-form-item>
-        <el-form-item v-show="form.type.toString() !== '2'" label="外链菜单" prop="iFrame">
-          <el-radio-group v-model="form.iFrame" size="mini">
+        <el-form-item v-show="form.type.toString() !== '2'" label="外链菜单" prop="iframe">
+          <el-radio-group v-model="form.iframe" size="mini">
             <el-radio-button label="true">是</el-radio-button>
             <el-radio-button label="false">否</el-radio-button>
           </el-radio-group>
@@ -59,7 +53,7 @@
           <el-input v-model="form.title" placeholder="按钮名称" style="width: 178px;" />
         </el-form-item>
         <el-form-item v-show="form.type.toString() !== '0'" label="权限标识" prop="permission">
-          <el-input v-model="form.permission" :disabled="form.iFrame.toString() === 'true'" placeholder="权限标识" style="width: 178px;" />
+          <el-input v-model="form.permission" :disabled="form.iframe.toString() === 'true'" placeholder="权限标识" style="width: 178px;" />
         </el-form-item>
         <el-form-item v-if="form.type.toString() !== '2'" label="路由地址" prop="path">
           <el-input v-model="form.path" placeholder="路由地址" style="width: 178px;" />
@@ -67,10 +61,10 @@
         <el-form-item label="菜单排序" prop="menuSort">
           <el-input-number v-model.number="form.menuSort" :min="0" :max="999" controls-position="right" style="width: 178px;" />
         </el-form-item>
-        <el-form-item v-show="form.iFrame.toString() !== 'true' && form.type.toString() === '1'" label="组件名称" prop="componentName">
+        <el-form-item v-show="form.iframe.toString() !== 'true' && form.type.toString() === '1'" label="组件名称" prop="componentName">
           <el-input v-model="form.componentName" style="width: 178px;" placeholder="匹配组件内Name字段" />
         </el-form-item>
-        <el-form-item v-show="form.iFrame.toString() !== 'true' && form.type.toString() === '1'" label="组件路径" prop="component">
+        <el-form-item v-show="form.iframe.toString() !== 'true' && form.type.toString() === '1'" label="组件路径" prop="component">
           <el-input v-model="form.component" style="width: 178px;" placeholder="组件路径" />
         </el-form-item>
         <el-form-item label="上级类目" prop="pid">
@@ -115,9 +109,9 @@
       </el-table-column>
       <el-table-column :show-overflow-tooltip="true" prop="permission" label="权限标识" />
       <el-table-column :show-overflow-tooltip="true" prop="component" label="组件路径" />
-      <el-table-column prop="iFrame" label="外链" width="75px">
+      <el-table-column prop="iframe" label="外链" width="75px">
         <template slot-scope="scope">
-          <span v-if="scope.row.iFrame">是</span>
+          <span v-if="scope.row.iframe">是</span>
           <span v-else>否</span>
         </template>
       </el-table-column>
@@ -133,7 +127,8 @@
           <span v-else>是</span>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建日期" width="135px" />
+      <el-table-column prop="createdAt" label="创建日期" width="135px" :formatter="dateFormatter">
+      </el-table-column>
       <el-table-column v-if="checkPer(['admin','menu:edit','menu:del'])" label="操作" width="130px" align="center" fixed="right">
         <template slot-scope="scope">
           <udOperation
@@ -144,6 +139,7 @@
         </template>
       </el-table-column>
     </el-table>
+    <pagination />
   </div>
 </template>
 
@@ -158,19 +154,22 @@ import rrOperation from '@crud/RR.operation'
 import crudOperation from '@crud/CRUD.operation'
 import udOperation from '@crud/UD.operation'
 import DateRangePicker from '@/components/DateRangePicker'
+import pagination from "@crud/Pagination.vue";
+import {toHumanDate} from "@/utils";
 
 // crud交由presenter持有
-const defaultForm = { id: null, title: null, menuSort: 999, path: null, component: null, componentName: null, iFrame: false, roles: [], pid: 0, icon: null, cache: false, hidden: false, type: 0, permission: null }
+const defaultForm = { id: null, title: null, menuSort: 999, path: null, component: null, componentName: null, iframe: false, roles: [], pid: 0, icon: null, cache: false, hidden: false, type: 0, permission: null }
 export default {
   name: 'Menu',
-  components: { Treeselect, IconSelect, crudOperation, rrOperation, udOperation, DateRangePicker },
+  components: {pagination, Treeselect, IconSelect, crudOperation, rrOperation, udOperation, DateRangePicker },
   cruds() {
-    return CRUD({ title: '菜单', url: 'api/menus', crudMethod: { ...crudMenu }})
+    return CRUD({ title: '菜单', url: 'menus/list', crudMethod: { ...crudMenu }})
   },
   mixins: [presenter(), header(), form(defaultForm), crud()],
   data() {
     return {
       menus: [],
+      toHumanDate,
       permission: {
         add: ['admin', 'menu:add'],
         edit: ['admin', 'menu:edit'],
@@ -203,7 +202,7 @@ export default {
       const params = { pid: tree.id }
       setTimeout(() => {
         crudMenu.getMenus(params).then(res => {
-          resolve(res.content)
+          resolve(res.items)
         })
       }, 100)
     },
@@ -236,6 +235,9 @@ export default {
     // 选中图标
     selected(name) {
       this.form.icon = name
+    },
+    dateFormatter(row, column) {
+      return toHumanDate(row.createdAt)
     }
   }
 }

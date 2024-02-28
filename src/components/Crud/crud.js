@@ -89,7 +89,7 @@ function CRUD(options) {
     },
     page: {
       // 页码
-      page: 0,
+      page: 1,
       // 每页数据条数
       size: 10,
       // 总数据条数
@@ -137,8 +137,8 @@ function CRUD(options) {
             table.store.states.treeData = {}
             table.store.states.lazyTreeNodeMap = {}
           }
-          crud.page.total = data.totalElements
-          crud.data = data.content
+          crud.page.total = data.count
+          crud.data = data.items
           crud.resetDataStatus()
           // time 毫秒后显示表格
           setTimeout(() => {
@@ -348,7 +348,7 @@ function CRUD(options) {
         if (crud.params[item] === null || crud.params[item] === '') crud.params[item] = undefined
       })
       return {
-        page: crud.page.page - 1,
+        page: crud.page.page,
         size: crud.page.size,
         sort: crud.sort,
         ...crud.query,

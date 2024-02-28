@@ -30,7 +30,8 @@ const user = {
     Login({ commit }, userInfo) {
       const rememberMe = userInfo.rememberMe
       return new Promise((resolve, reject) => {
-        login(userInfo.username, userInfo.password, userInfo.code, userInfo.uuid).then(res => {
+        login(userInfo.account, userInfo.password, userInfo.uuid).then(res => {
+          console.log(res)
           setToken(res.token, rememberMe)
           commit('SET_TOKEN', res.token)
           setUserInfo(res.user, commit)
@@ -88,7 +89,7 @@ export const setUserInfo = (res, commit) => {
   } else {
     commit('SET_ROLES', res.roles)
   }
-  commit('SET_USER', res.user)
+  commit('SET_USER', res)
 }
 
 export default user
